@@ -11,6 +11,10 @@
     <meta name="apple-mobile-web-app-title" content="Diesel Tracker">
     <meta name="theme-color" content="#047857">
 
+    <!-- App Icon (Embedded Base64 SVG) -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiBzdHlsZT0iYmFja2dyb3VuZC1jb2xvcjojMDQ3ODU3Ij48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjAiIGZpbGw9IiMwNDc4NTciLz48cGF0aCBkPSJNMzY4IDEyOEgxNDRjLTE3LjY3IDAtMzIgMTQuMzMtMzIgMzJ2MjU2YzAgMTcuNjcgMTQuMzMgMzIgMzIgMzJoMjI0YzE3LjY3IDAgMzItMTQuMzMgMzItMzJWMTYwYzAtMTcuNjctMTQuMzMtMzItMzItMzJ6IiBmaWxsPSIjZmZmIi8+PHBhdGggZD0iTTE0NCAxNjBoMjI0djk2SDE0NHoiIGZpbGw9IiMzNGQzOTkiLz48cGF0aCBkPSJNMjMyIDMyMGg0OHY0OGgtNDh6IiBmaWxsPSIjMDQ3ODU3Ii8+PHBhdGggZD0iTTM2OCAxMjhoMzJjMTcuNjcgMCAzMiAxNC4zMyAzMiAzMnYxMjhjMCAxNy42Ny0xNC4zMyAzMi0zMiAzMmgtMzIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIyNCIvPjwvc3ZnPg==">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0iIzA0Nzg1NyIvPjxwYXRoIGQ9Ik0zNjggMTI4SDE0NGMtMTcuNjcgMC0zMiAxNC4zMy0zMiAzMnYyNTZjMCAxNy42NyAxNC4zMyAzMiAzMiAzMmgyMjRjMTcuNjcgMCAzMi0xNC4zMyAzMi0zMlYxNjBjMC0xNy42Ny0xNC4zMy0zMi0zMi0zMnoiIGZpbGw9IiNmZmYiLz48cGF0aCBkPSJNMTQ0IDE2MGgyMjR2OTZIMTQ0eiIgZmlsbD0iIzM0ZDM5OSIvPjxwYXRoIGQ9Ik0yMzIgMzIwaDQ4djQ4aC00OHoiIGZpbGw9IiMwNDc4NTciLz48cGF0aCBkPSJNMzY4IDEyOGgzMmMxNy42NyAwIDMyIDE0LjMzIDMyIDMydjEyOGMwIDE3LjY3LTE0LjMzIDMyLTMyIDMyaC0zMiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjI0Ii8+PC9zdmc+">
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -89,7 +93,6 @@
         };
 
         // --- Helpers ---
-        // Helper to format local date for input field (YYYY-MM-DD)
         const toInputDate = (dateObj) => {
             const year = dateObj.getFullYear();
             const month = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -107,7 +110,7 @@
             const [pricePerLiter, setPricePerLiter] = useState('');
             const [totalCost, setTotalCost] = useState('');
             const [liters, setLiters] = useState('');
-            const [dateInput, setDateInput] = useState(toInputDate(new Date())); // Default to today
+            const [dateInput, setDateInput] = useState(toInputDate(new Date())); 
             const [editingId, setEditingId] = useState(null);
             
             const [viewMode, setViewMode] = useState('cost');
@@ -130,6 +133,17 @@
                 }
             }, [pricePerLiter, totalCost]);
 
+            // Safe numeric input handler for iOS comma issue
+            const handleNumericInput = (setter) => (e) => {
+                let value = e.target.value;
+                // Replace comma with dot
+                value = value.replace(/,/g, '.');
+                // Validate float pattern (allow empty, numbers, single dot)
+                if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                    setter(value);
+                }
+            };
+
             const handleSubmit = (e) => {
                 e.preventDefault();
                 
@@ -139,10 +153,6 @@
 
                 if (!p || !c || !l) return;
 
-                // Create date object from input. 
-                // We append T12:00:00 to ensure it falls on the correct day in local time 
-                // regardless of typical timezone shifts when parsing YYYY-MM-DD.
-                // Or simply use the date object constructor with arguments.
                 const inputDateParts = dateInput.split('-');
                 const entryDate = new Date(
                     parseInt(inputDateParts[0]), 
@@ -184,11 +194,10 @@
             };
 
             const handleEdit = (log) => {
-                setPricePerLiter(log.pricePerLiter);
-                setTotalCost(log.totalCost);
-                setLiters(log.liters);
+                setPricePerLiter(String(log.pricePerLiter));
+                setTotalCost(String(log.totalCost));
+                setLiters(String(log.liters));
                 
-                // Parse date safely
                 const logDate = new Date(log.date);
                 setDateInput(toInputDate(logDate));
                 
@@ -202,7 +211,6 @@
                 setLogs(updatedLogs);
                 saveLogsToStorage(updatedLogs);
                 
-                // If deleting the currently edited item, reset form
                 if (id === editingId) {
                     resetForm();
                 }
@@ -256,7 +264,6 @@
                 reader.readAsText(file);
             };
 
-            // --- CHART DATA PROCESSING (YoY Logic) ---
             const chartData = useMemo(() => {
                 const now = new Date();
                 const displayData = []; 
@@ -358,11 +365,17 @@
                                 )}
                             </h2>
                             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                <div className="space-y-1 md:col-span-4">
+                                <div className="space-y-1 md:col-span-4 min-w-0">
                                     <label className="text-xs font-medium text-slate-500 uppercase">Date</label>
                                     <div className="relative">
                                         <div className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"><Icons.Calendar /></div>
-                                        <input type="date" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-lg font-medium text-slate-700" value={dateInput} onChange={(e) => setDateInput(e.target.value)} required />
+                                        <input 
+                                            type="date" 
+                                            className="w-full min-w-0 max-w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-base font-medium text-slate-700 appearance-none" 
+                                            value={dateInput} 
+                                            onChange={(e) => setDateInput(e.target.value)} 
+                                            required 
+                                        />
                                     </div>
                                 </div>
 
@@ -370,21 +383,37 @@
                                     <label className="text-xs font-medium text-slate-500 uppercase">Price / Liter</label>
                                     <div className="relative">
                                         <div className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"><Icons.Euro /></div>
-                                        <input type="number" inputMode="decimal" step="0.001" placeholder="1.659" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-lg font-medium" value={pricePerLiter} onChange={(e) => setPricePerLiter(e.target.value)} required />
+                                        <input 
+                                            type="text" 
+                                            inputMode="decimal" 
+                                            placeholder="1.659" 
+                                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-base font-medium" 
+                                            value={pricePerLiter} 
+                                            onChange={handleNumericInput(setPricePerLiter)} 
+                                            required 
+                                        />
                                     </div>
                                 </div>
                                 <div className="space-y-1 md:col-span-2">
                                     <label className="text-xs font-medium text-slate-500 uppercase">Total Paid</label>
                                     <div className="relative">
                                         <div className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"><Icons.Euro /></div>
-                                        <input type="number" inputMode="decimal" step="0.01" placeholder="50.00" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-lg font-medium" value={totalCost} onChange={(e) => setTotalCost(e.target.value)} required />
+                                        <input 
+                                            type="text" 
+                                            inputMode="decimal" 
+                                            placeholder="50.00" 
+                                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-base font-medium" 
+                                            value={totalCost} 
+                                            onChange={handleNumericInput(setTotalCost)} 
+                                            required 
+                                        />
                                     </div>
                                 </div>
                                 <div className="space-y-1 md:col-span-4">
                                     <label className="text-xs font-medium text-slate-500 uppercase">Volume</label>
                                     <div className="relative">
                                         <div className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"><Icons.Droplet /></div>
-                                        <input type="number" step="0.01" placeholder="Calc..." className="w-full pl-10 pr-4 py-3 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 outline-none" value={liters} onChange={(e) => setLiters(e.target.value)} readOnly />
+                                        <input type="number" step="0.01" placeholder="Calc..." className="w-full pl-10 pr-4 py-3 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 outline-none text-base" value={liters} onChange={(e) => setLiters(e.target.value)} readOnly />
                                     </div>
                                 </div>
                                 
